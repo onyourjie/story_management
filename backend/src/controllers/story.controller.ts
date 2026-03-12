@@ -37,9 +37,7 @@ export const createStory = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const coverImage = req.file
-      ? `/uploads/${req.file.filename}`
-      : undefined;
+    const coverImage = req.file ? req.file.path : undefined;
 
     let tags: string[] = [];
     if (req.body.tags) {
@@ -69,9 +67,7 @@ export const updateStory = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const coverImage = req.file
-      ? `/uploads/${req.file.filename}`
-      : req.body.coverImage;
+    const coverImage = req.file ? req.file.path : req.body.coverImage;
 
     let tags: string[] | undefined;
     if (req.body.tags !== undefined) {
