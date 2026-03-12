@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Story {
+  id         String    @id @default(cuid())
+  title      String
+  author     String
+  synopsis   String
+  category   String
+  coverImage String?
+  tags       String    @default("[]")
+  status     String    @default("Draft")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  chapters   Chapter[]
+}
+
+model Chapter {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @default("")
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
