@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ChevronLeft, Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, MoreHorizontal, Pencil, Trash2, Image } from "lucide-react";
 import Swal from "sweetalert2";
 import { format } from "../utils/date";
 import { createStory, updateStory, getStoryById } from "../services/storyService";
@@ -199,7 +199,9 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
               {coverPreview ? (
                 <img src={coverPreview} alt="cover" className="h-12 w-12 object-cover rounded-lg" />
               ) : (
-                <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 text-xl">📁</div>
+                <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300">
+                  <Image size={24} />
+                </div>
               )}
               {!isReadonly && (
                 <input type="file" accept="image/*" onChange={handleCoverChange} className="text-sm text-gray-500" />
