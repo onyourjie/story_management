@@ -1,7 +1,7 @@
 import prisma from "../utils/prisma";
 
 async function main() {
-  await prisma.story.deleteMany();
+  // await prisma.story.deleteMany();
 
   const story1 = await prisma.story.create({
     data: {
