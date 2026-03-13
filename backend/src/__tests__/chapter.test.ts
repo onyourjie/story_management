@@ -6,9 +6,6 @@ let storyId: string;
 let chapterId: string;
 
 beforeAll(async () => {
-  await prisma.chapter.deleteMany();
-  await prisma.story.deleteMany();
-
   const story = await prisma.story.create({
     data: {
       title: "Chapter Test Story",
@@ -23,8 +20,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma.chapter.deleteMany();
-  await prisma.story.deleteMany();
+  if (storyId) {
+    await prisma.chapter.deleteMany({ where: { storyId } });
+    await prisma.story.deleteMany({ where: { id: storyId } });
+  }
   await prisma.$disconnect();
 });
 

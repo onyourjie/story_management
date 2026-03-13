@@ -50,10 +50,37 @@ export const createStory = async (
       }
     }
 
+    let chapters: Array<{ title: string; content: string }> = [];
+    if (req.body.chapters) {
+      try {
+        const parsedChapters =
+          typeof req.body.chapters === "string"
+            ? JSON.parse(req.body.chapters)
+            : req.body.chapters;
+
+        if (Array.isArray(parsedChapters)) {
+          chapters = parsedChapters
+            .filter(
+              (chapter: any) =>
+                chapter &&
+                typeof chapter.title === "string" &&
+                typeof chapter.content === "string"
+            )
+            .map((chapter: any) => ({
+              title: chapter.title,
+              content: chapter.content,
+            }));
+        }
+      } catch {
+        chapters = [];
+      }
+    }
+
     const story = await storyService.createStory({
       ...req.body,
       tags,
       coverImage,
+      chapters,
     });
     res.status(201).json({ success: true, data: story });
   } catch (err) {

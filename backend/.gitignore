@@ -4,5 +4,6 @@ uploads/
 coverage/
 
 .env
+.env.test
 
 /generated/prisma
