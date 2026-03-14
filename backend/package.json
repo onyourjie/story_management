@@ -10,6 +10,7 @@
     "test": "jest --forceExit --runInBand",
     "test:coverage": "jest --coverage --forceExit --runInBand",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:test": "NODE_ENV=test prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node src/prisma/seed.ts"
   },

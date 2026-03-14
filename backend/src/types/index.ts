@@ -29,6 +29,7 @@ export interface CreateStoryDto {
   coverImage?: string;
   tags: string[];
   status: string;
+  chapters?: CreateChapterDto[];
 }
 
 export interface UpdateStoryDto extends Partial<CreateStoryDto> {}

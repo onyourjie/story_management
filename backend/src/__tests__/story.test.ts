@@ -2,14 +2,17 @@ import request from "supertest";
 import app from "../index";
 import prisma from "../utils/prisma";
 
-beforeAll(async () => {
-  await prisma.chapter.deleteMany();
-  await prisma.story.deleteMany();
-});
+const cleanupStoryIds: string[] = [];
 
 afterAll(async () => {
-  await prisma.chapter.deleteMany();
-  await prisma.story.deleteMany();
+  if (cleanupStoryIds.length > 0) {
+    await prisma.chapter.deleteMany({
+      where: { storyId: { in: cleanupStoryIds } },
+    });
+    await prisma.story.deleteMany({
+      where: { id: { in: cleanupStoryIds } },
+    });
+  }
   await prisma.$disconnect();
 });
 
@@ -32,6 +35,31 @@ describe("Story API", () => {
       expect(res.body.data.title).toBe("Test Story");
       expect(res.body.data.author).toBe("Test Author");
       createdStoryId = res.body.data.id;
+      cleanupStoryIds.push(createdStoryId);
+    });
+
+    it("should create a story with initial chapters", async () => {
+      const chapters = [
+        { title: "Chapter A", content: "<p>Chapter A Content</p>" },
+        { title: "Chapter B", content: "<p>Chapter B Content</p>" },
+      ];
+
+      const res = await request(app)
+        .post("/api/stories")
+        .field("title", "Story With Chapters")
+        .field("author", "Test Author")
+        .field("synopsis", "Test synopsis with chapters")
+        .field("category", "Fantasy")
+        .field("status", "Draft")
+        .field("tags", JSON.stringify(["chapter"]))
+        .field("chapters", JSON.stringify(chapters));
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data.chapters)).toBe(true);
+      expect(res.body.data.chapters.length).toBe(2);
+      expect(res.body.data.chapters[0].title).toBeDefined();
+      cleanupStoryIds.push(res.body.data.id);
     });
 
     it("should return 400 for missing required fields", async () => {

@@ -54,6 +54,10 @@ export const getStoryById = async (id: string) => {
 };
 
 export const createStory = async (dto: CreateStoryDto) => {
+  const chapters = (dto.chapters || []).filter(
+    (chapter) => chapter.title?.trim() && chapter.content?.trim()
+  );
+
   const story = await prisma.story.create({
     data: {
       title: dto.title,
@@ -63,8 +67,16 @@ export const createStory = async (dto: CreateStoryDto) => {
       coverImage: dto.coverImage || null,
       tags: JSON.stringify(dto.tags || []),
       status: dto.status,
+      ...(chapters.length > 0 && {
+        chapters: {
+          create: chapters.map((chapter) => ({
+            title: chapter.title,
+            content: chapter.content,
+          })),
+        },
+      }),
     },
-    include: { chapters: true },
+    include: { chapters: { orderBy: { createdAt: "desc" } } },
   });
   return parseStory(story);
 };
