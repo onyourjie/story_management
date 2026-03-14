@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ChevronLeft, Plus, MoreHorizontal, Pencil, Trash2, Image } from "lucide-react";
+import { ChevronLeft, Plus, MoreHorizontal, Eye, Pencil, Trash2, Image } from "lucide-react";
 import Swal from "sweetalert2";
 import { format } from "../utils/date";
 import { createStory, updateStory, getStoryById } from "../services/storyService";
@@ -14,6 +14,18 @@ import TagInput from "../components/common/TagInput";
 
 interface StoryFormProps {
   mode: "add" | "edit" | "detail";
+}
+
+const ADD_STORY_DRAFT_KEY = "add-story-draft";
+
+interface AddStoryDraft {
+  title: string;
+  author: string;
+  synopsis: string;
+  category: string;
+  status: string;
+  tags: string[];
+  chapters: Chapter[];
 }
 
 const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
@@ -31,8 +43,47 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isDraftHydrated, setIsDraftHydrated] = useState(mode !== "add");
 
   const isReadonly = mode === "detail";
+
+  useEffect(() => {
+    if (mode !== "add") return;
+
+    try {
+      const raw = sessionStorage.getItem(ADD_STORY_DRAFT_KEY);
+      if (!raw) return;
+
+      const draft = JSON.parse(raw) as Partial<AddStoryDraft>;
+      setTitle(draft.title || "");
+      setAuthor(draft.author || "");
+      setSynopsis(draft.synopsis || "");
+      setCategory(draft.category || "");
+      setStatus(draft.status || "Draft");
+      setTags(Array.isArray(draft.tags) ? draft.tags : []);
+      setChapters(Array.isArray(draft.chapters) ? draft.chapters : []);
+    } catch {
+      sessionStorage.removeItem(ADD_STORY_DRAFT_KEY);
+    } finally {
+      setIsDraftHydrated(true);
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== "add" || !isDraftHydrated) return;
+
+    const payload: AddStoryDraft = {
+      title,
+      author,
+      synopsis,
+      category,
+      status,
+      tags,
+      chapters,
+    };
+
+    sessionStorage.setItem(ADD_STORY_DRAFT_KEY, JSON.stringify(payload));
+  }, [mode, isDraftHydrated, title, author, synopsis, category, status, tags, chapters]);
 
   useEffect(() => {
     if ((mode === "edit" || mode === "detail") && id) {
@@ -71,7 +122,12 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
       confirmButtonText: "Yes, cancel",
       cancelButtonText: "Stay",
     });
-    if (result.isConfirmed) navigate("/stories");
+    if (result.isConfirmed) {
+      if (mode === "add") {
+        sessionStorage.removeItem(ADD_STORY_DRAFT_KEY);
+      }
+      navigate("/stories");
+    }
   };
 
   const handleSave = async () => {
@@ -88,10 +144,20 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
       formData.append("category", category);
       formData.append("status", status);
       formData.append("tags", JSON.stringify(tags));
+      formData.append(
+        "chapters",
+        JSON.stringify(
+          chapters.map((chapter) => ({
+            title: chapter.title,
+            content: chapter.content,
+          }))
+        )
+      );
       if (coverFile) formData.append("coverImage", coverFile);
 
       if (mode === "add") {
         await createStory(formData);
+        sessionStorage.removeItem(ADD_STORY_DRAFT_KEY);
         Swal.fire("Success!", "Story created successfully.", "success");
       } else {
         await updateStory(id!, formData);
@@ -116,8 +182,12 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
     });
     if (result.isConfirmed) {
       try {
-        await deleteChapter(id!, chapterId);
-        setChapters((prev) => prev.filter((c) => c.id !== chapterId));
+        if (mode === "add") {
+          setChapters((prev) => prev.filter((c) => c.id !== chapterId));
+        } else {
+          await deleteChapter(id!, chapterId);
+          setChapters((prev) => prev.filter((c) => c.id !== chapterId));
+        }
         Swal.fire("Deleted!", "", "success");
       } catch {
         Swal.fire("Error", "Failed to delete chapter", "error");
@@ -218,16 +288,17 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
         </div>
 
         {/* chapter section*/}
-        {!isReadonly && mode === "edit" && (
+        {!isReadonly && (mode === "edit" || mode === "add") && (
           <div className="flex justify-end mb-4">
-            <Button onClick={() => navigate(`/stories/${id}/chapters/add`)}>
+            <Button
+              onClick={() =>
+                navigate(mode === "add" ? "/stories/add/chapters/add" : `/stories/${id}/chapters/add`)
+              }
+            >
               <Plus size={16} />
               Add Chapter
             </Button>
           </div>
-        )}
-        {mode === "add" && (
-          <p className="text-sm text-gray-400 mb-4 italic">Save the story first to add chapters.</p>
         )}
 
         {chapters.length > 0 && (
@@ -237,7 +308,7 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Title</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Last Updated</th>
-                  {!isReadonly && <th className="w-10"></th>}
+                  <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
@@ -245,34 +316,52 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
                   <tr key={ch.id} className="border-t border-gray-100 hover:bg-gray-50 relative">
                     <td className="px-4 py-3 text-gray-800">{ch.title}</td>
                     <td className="px-4 py-3 text-gray-500">{format(ch.updatedAt)}</td>
-                    {!isReadonly && (
-                      <td className="px-4 py-3">
-                        <div className="relative">
-                        <button
-                          onClick={() => setOpenMenuId(openMenuId === ch.id ? null : ch.id)}
-                          className="p-1 rounded hover:bg-gray-100"
-                        >
-                          <MoreHorizontal size={16} className="text-gray-500" />
-                        </button>
-                        {openMenuId === ch.id && (
-                          <div className="absolute right-0 top-8 bg-white shadow-lg rounded-xl border border-gray-100 z-50 w-32 py-1">
-                            <button
-                              onClick={() => { navigate(`/stories/${id}/chapters/${ch.id}/edit`); setOpenMenuId(null); }}
-                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-                            >
-                              <Pencil size={13} /> Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteChapter(ch.id, ch.title)}
-                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50"
-                            >
-                              <Trash2 size={13} /> Delete
-                            </button>
-                          </div>
-                        )}
+                    <td className="px-4 py-3">
+                      <div className="relative">
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === ch.id ? null : ch.id)}
+                        className="p-1 rounded hover:bg-gray-100"
+                      >
+                        <MoreHorizontal size={16} className="text-gray-500" />
+                      </button>
+                      {openMenuId === ch.id && (
+                        <div className="absolute right-0 top-8 bg-white shadow-lg rounded-xl border border-gray-100 z-50 w-32 py-1">
+                          <button
+                            onClick={() => {
+                              navigate(
+                                mode === "add"
+                                  ? `/stories/add/chapters/${ch.id}`
+                                  : `/stories/${id}/chapters/${ch.id}`
+                              );
+                              setOpenMenuId(null);
+                            }}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                          >
+                            <Eye size={13} /> View
+                          </button>
+                          <button
+                            onClick={() => {
+                              navigate(
+                                mode === "add"
+                                  ? `/stories/add/chapters/${ch.id}/edit`
+                                  : `/stories/${id}/chapters/${ch.id}/edit`
+                              );
+                              setOpenMenuId(null);
+                            }}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                          >
+                            <Pencil size={13} /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteChapter(ch.id, ch.title)}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+                          >
+                            <Trash2 size={13} /> Delete
+                          </button>
                         </div>
-                      </td>
-                    )}
+                      )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

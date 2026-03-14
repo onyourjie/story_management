@@ -14,11 +14,27 @@ const App: React.FC = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/stories" element={<StoryList />} />
           <Route path="/stories/add" element={<StoryForm mode="add" />} />
+          <Route
+            path="/stories/add/chapters/add"
+            element={<ChapterForm mode="add" />}
+          />
+          <Route
+            path="/stories/add/chapters/:chapterId"
+            element={<ChapterForm mode="detail" />}
+          />
+          <Route
+            path="/stories/add/chapters/:chapterId/edit"
+            element={<ChapterForm mode="edit" />}
+          />
           <Route path="/stories/:id" element={<StoryForm mode="detail" />} />
           <Route path="/stories/:id/edit" element={<StoryForm mode="edit" />} />
           <Route
             path="/stories/:id/chapters/add"
             element={<ChapterForm mode="add" />}
+          />
+          <Route
+            path="/stories/:id/chapters/:chapterId"
+            element={<ChapterForm mode="detail" />}
           />
           <Route
             path="/stories/:id/chapters/:chapterId/edit"
@@ -32,5 +48,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-//tes
