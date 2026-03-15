@@ -154,7 +154,7 @@ const StoryList: React.FC = () => {
                 stories.map((story, idx) => (
                   <tr key={story.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="py-3 text-gray-500">{(page - 1) * LIMIT + idx + 1}</td>
-                    <td className="py-3 font-medium text-gray-800 max-w-[180px] truncate">{story.title}</td>
+                    <td className="py-3 font-medium text-gray-800 max-w-45 truncate">{story.title}</td>
                     <td className="py-3 text-gray-600">{story.author}</td>
                     <td className="py-3 text-gray-600">{story.category}</td>
                     <td className="py-3">
