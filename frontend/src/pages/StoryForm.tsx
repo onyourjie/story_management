@@ -172,6 +172,7 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
   };
 
   const handleDeleteChapter = async (chapterId: string, chapterTitle: string) => {
+    if (isReadonly) return;
     const result = await Swal.fire({
       title: "Delete Chapter?",
       text: `Delete "${chapterTitle}"?`,
@@ -317,50 +318,61 @@ const StoryForm: React.FC<StoryFormProps> = ({ mode }) => {
                     <td className="px-4 py-3 text-gray-800">{ch.title}</td>
                     <td className="px-4 py-3 text-gray-500">{format(ch.updatedAt)}</td>
                     <td className="px-4 py-3">
-                      <div className="relative">
-                      <button
-                        onClick={() => setOpenMenuId(openMenuId === ch.id ? null : ch.id)}
-                        className="p-1 rounded hover:bg-gray-100"
-                      >
-                        <MoreHorizontal size={16} className="text-gray-500" />
-                      </button>
-                      {openMenuId === ch.id && (
-                        <div className="absolute right-0 top-8 bg-white shadow-lg rounded-xl border border-gray-100 z-50 w-32 py-1">
+                      {isReadonly ? (
+                        <button
+                          onClick={() => navigate(`/stories/${id!}/chapters/${ch.id}`)}
+                          className="p-1 rounded hover:bg-gray-100"
+                          aria-label="View chapter"
+                          title="View"
+                        >
+                          <Eye size={16} className="text-gray-500" />
+                        </button>
+                      ) : (
+                        <div className="relative">
                           <button
-                            onClick={() => {
-                              navigate(
-                                mode === "add"
-                                  ? `/stories/add/chapters/${ch.id}`
-                                  : `/stories/${id}/chapters/${ch.id}`
-                              );
-                              setOpenMenuId(null);
-                            }}
-                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                            onClick={() => setOpenMenuId(openMenuId === ch.id ? null : ch.id)}
+                            className="p-1 rounded hover:bg-gray-100"
                           >
-                            <Eye size={13} /> View
+                            <MoreHorizontal size={16} className="text-gray-500" />
                           </button>
-                          <button
-                            onClick={() => {
-                              navigate(
-                                mode === "add"
-                                  ? `/stories/add/chapters/${ch.id}/edit`
-                                  : `/stories/${id}/chapters/${ch.id}/edit`
-                              );
-                              setOpenMenuId(null);
-                            }}
-                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-                          >
-                            <Pencil size={13} /> Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteChapter(ch.id, ch.title)}
-                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50"
-                          >
-                            <Trash2 size={13} /> Delete
-                          </button>
+                          {openMenuId === ch.id && (
+                            <div className="absolute right-0 top-8 bg-white shadow-lg rounded-xl border border-gray-100 z-50 w-32 py-1">
+                              <button
+                                onClick={() => {
+                                  navigate(
+                                    mode === "add"
+                                      ? `/stories/add/chapters/${ch.id}`
+                                      : `/stories/${id!}/chapters/${ch.id}`
+                                  );
+                                  setOpenMenuId(null);
+                                }}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                              >
+                                <Eye size={13} /> View
+                              </button>
+                              <button
+                                onClick={() => {
+                                  navigate(
+                                    mode === "add"
+                                      ? `/stories/add/chapters/${ch.id}/edit`
+                                      : `/stories/${id!}/chapters/${ch.id}/edit`
+                                  );
+                                  setOpenMenuId(null);
+                                }}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                              >
+                                <Pencil size={13} /> Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteChapter(ch.id, ch.title)}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+                              >
+                                <Trash2 size={13} /> Delete
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
-                      </div>
                     </td>
                   </tr>
                 ))}
